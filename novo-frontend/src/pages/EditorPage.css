@@ -1,0 +1,37 @@
+/* src/pages/EditorPage.css */
+.editor-page-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.editor-page-container h1 {
+  color: #2c4a6b;
+  margin-bottom: 10px;
+}
+
+.editor-description {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.editor-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.back-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px 15px;
+  cursor: pointer;
+  color: #333;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #e0e0e0;
+}

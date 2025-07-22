@@ -1,0 +1,434 @@
+/* src/components/Header/Header.css */
+.app-header {
+  background-color: #101f2e;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+/* Efeito de vidro fosco quando faz scroll */
+.app-header.scrolled {
+  background-color: rgba(255, 255, 255, 0.37);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #1e3a8a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Elemento de fundo para o efeito de vidro */
+.header-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logo {
+  height: 36px; /* Tamanho ajustado da logo */
+  width: auto;
+  display: block;
+  transition: height 0.3s ease;
+}
+
+/* Logo ligeiramente menor quando faz scroll */
+.app-header.scrolled .logo {
+  height: 32px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Navegação principal */
+.main-nav {
+  margin-right: 1.5rem;
+}
+
+.nav-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item {
+  margin: 0 0.5rem;
+}
+
+.nav-link {
+  color: #e2e8f0;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+/* Mudar cor dos links quando scrolled */
+.app-header.scrolled .nav-link {
+  color: #101f2e;
+}
+
+.nav-link:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Mudar cor do hover quando scrolled */
+.app-header.scrolled .nav-link:hover {
+  color: #1e3a8a;
+  background-color: rgba(30, 58, 138, 0.1);
+}
+
+.nav-link i {
+  margin-right: 0.5rem;
+  font-size: 1rem;
+}
+
+/* Menu do usuário */
+.user-menu-container {
+  position: relative;
+}
+
+.user-button {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Mudar cor do botão do usuário quando scrolled */
+.app-header.scrolled .user-button {
+  color: #101f2e;
+}
+
+.user-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Mudar cor do hover do botão do usuário quando scrolled */
+.app-header.scrolled .user-button:hover {
+  background-color: rgba(30, 58, 138, 0.1);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  background-color: #3b82f6;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+/* Avatar com cores invertidas quando scrolled */
+.app-header.scrolled .user-avatar {
+  background-color: #1e3a8a;
+  color: #fff;
+}
+
+.user-avatar.large {
+  width: 48px;
+  height: 48px;
+  font-size: 1.25rem;
+}
+
+.user-name {
+  margin: 0 0.5rem;
+  font-weight: 500;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 280px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.user-info {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.user-details {
+  margin-left: 1rem;
+  overflow: hidden;
+}
+
+.user-fullname {
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email {
+  color: #64748b;
+  margin: 0;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: #334155;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.user-menu-item:hover {
+  background-color: #f1f5f9;
+}
+
+.user-menu-item i {
+  margin-right: 0.75rem;
+  width: 16px;
+  text-align: center;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e2e8f0;
+  margin: 0.5rem 0;
+}
+
+.logout {
+  color: #ef4444;
+}
+
+/* Botões de autenticação */
+.auth-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.auth-buttons .auth-button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.auth-buttons .login {
+  color: #fff;
+  margin-right: 0.75rem;
+}
+
+/* Mudar cor do botão de login quando scrolled */
+.app-header.scrolled .auth-buttons .login {
+  color: #1e3a8a;
+}
+
+.auth-buttons .login:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Mudar cor do hover do botão de login quando scrolled */
+.app-header.scrolled .auth-buttons .login:hover {
+  background-color: rgba(30, 58, 138, 0.1);
+}
+
+.auth-buttons .register {
+  background-color: #fff;
+  color: #1e3a8a;
+}
+
+/* Inverter cores do botão de registro quando scrolled */
+.app-header.scrolled .auth-buttons .register {
+  background-color: #1e3a8a;
+  color: #fff;
+}
+
+.auth-buttons .register:hover {
+  background-color: #e2e8f0;
+}
+
+/* Mudar cor do hover do botão de registro quando scrolled */
+.app-header.scrolled .auth-buttons .register:hover {
+  background-color: #2d4ba0;
+}
+
+/* Menu mobile */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  width: 40px;
+  height: 40px;
+  padding: 0.5rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.menu-icon,
+.menu-icon::before,
+.menu-icon::after {
+  content: '';
+  display: block;
+  height: 2px;
+  width: 24px;
+  background-color: #fff;
+  position: absolute;
+  transition: all 0.3s ease;
+}
+
+/* Mudar cor do ícone do menu quando scrolled */
+.app-header.scrolled .menu-icon,
+.app-header.scrolled .menu-icon::before,
+.app-header.scrolled .menu-icon::after {
+  background-color: #1e3a8a;
+}
+
+.menu-icon {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.menu-icon::before {
+  top: -8px;
+  left: 0;
+}
+
+.menu-icon::after {
+  bottom: -8px;
+  left: 0;
+}
+
+.menu-toggle.active .menu-icon {
+  background-color: transparent;
+}
+
+.menu-toggle.active .menu-icon::before {
+  transform: rotate(45deg);
+  top: 0;
+}
+
+.menu-toggle.active .menu-icon::after {
+  transform: rotate(-45deg);
+  bottom: 0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .main-nav {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    background-color: #1e3a8a;
+    padding: 1rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
+    visibility: hidden;
+    z-index: 999;
+  }
+
+  /* Aplicar efeito de vidro fosco também ao menu mobile quando scrolled */
+  .app-header.scrolled .main-nav {
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .main-nav.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .nav-list {
+    flex-direction: column;
+  }
+
+  .nav-item {
+    margin: 0.5rem 0;
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem;
+  }
+
+  .menu-toggle {
+    display: block;
+    margin-left: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    padding: 0.75rem 1rem;
+  }
+
+  .logo {
+    height: 30px; /* Logo ainda menor para dispositivos móveis */
+  }
+
+  .app-header.scrolled .logo {
+    height: 28px; /* Logo ainda menor quando com scroll em dispositivos móveis */
+  }
+
+  .user-name {
+    display: none;
+  }
+}

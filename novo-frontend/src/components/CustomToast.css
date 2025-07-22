@@ -1,0 +1,19 @@
+/* src/components/CustomToast.css */
+.custom-toast {
+  display: flex;
+  align-items: center;
+  font-family: 'Roboto', sans-serif;
+}
+
+.custom-toast i {
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
+
+.custom-toast.success i {
+  color: #4caf50;
+}
+
+.custom-toast.error i {
+  color: #f44336;
+}
