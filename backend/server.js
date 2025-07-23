@@ -20,13 +20,18 @@ if (!fs.existsSync(uploadsDir)) {
   console.log('Pasta uploads criada com sucesso');
 }
 
-// Conectar ao MongoDB
-mongoose.connect('mongodb://localhost:27017/tesesjuridicas', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Conectado ao MongoDB'))
-.catch(err => console.error('Erro ao conectar ao MongoDB:', err));
+// Codificar o @ na senha usando encodeURIComponent
+const username = 'leonardomarques';
+const password = encodeURIComponent('Jvccf05040@'); // Codifica caracteres especiais na senha
+const MONGODB_URI = `mongodb+srv://${username}:${password}@teses-juridicas.8t5pfe6.mongodb.net/?retryWrites=true&w=majority&appName=teses-juridicas`;
+
+// Conectar ao MongoDB com tratamento de erro melhorado
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('Conectado ao MongoDB Atlas'))
+  .catch(err => {
+    console.error('Erro ao conectar ao MongoDB:', err);
+    console.log('Verifique se a string de conexão está correta e se o IP atual está na lista de IPs permitidos no Atlas');
+  });
 
 // Importar rotas
 const tesesRoutes = require('./routes/teses');

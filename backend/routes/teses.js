@@ -1,4 +1,4 @@
-// backend/routes/teses.js (versão simplificada)
+// backend/routes/teses.js
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -14,31 +14,6 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log('Pasta uploads criada com sucesso');
 }
-
-// Rota existente para buscar tese por ID
-router.get('/:id', async (req, res) => {
-  try {
-    // Verificar se o ID é válido para o MongoDB
-    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'ID de tese inválido' });
-    }
-    
-    const tese = await Tese.findById(req.params.id);
-    if (!tese) {
-      return res.status(404).json({ message: 'Tese não encontrada' });
-    }
-    
-    // Corrigir o formato do link se necessário
-    if (tese.link && tese.link.startsWith('file:http')) {
-      tese.link = tese.link.replace('file:', '');
-    }
-    
-    res.json(tese);
-  } catch (error) {
-    console.error('Erro ao buscar tese por ID:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
 
 // Configuração do Multer
 const storage = multer.diskStorage({
@@ -73,6 +48,67 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Erro ao buscar teses:', err);
     res.status(500).json({ error: 'Erro ao buscar teses', message: err.message });
+  }
+});
+
+// Rota para buscar tese por ID
+router.get('/:id', async (req, res) => {
+  try {
+    // Verificar se o ID é válido para o MongoDB
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'ID de tese inválido' });
+    }
+    
+    const tese = await Tese.findById(req.params.id);
+    if (!tese) {
+      return res.status(404).json({ message: 'Tese não encontrada' });
+    }
+    
+    // Corrigir o formato do link se necessário
+    if (tese.link && tese.link.startsWith('file:http')) {
+      tese.link = tese.link.replace('file:', '');
+    }
+    
+    res.json(tese);
+  } catch (error) {
+    console.error('Erro ao buscar tese por ID:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Criar uma nova tese
+router.post('/', async (req, res) => {
+  try {
+    const tese = new Tese(req.body);
+    const novaTese = await tese.save();
+    res.status(201).json(novaTese);
+  } catch (err) {
+    console.error('Erro ao criar tese:', err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Atualizar uma tese existente
+router.put('/:id', async (req, res) => {
+  try {
+    const tese = await Tese.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!tese) return res.status(404).json({ message: 'Tese não encontrada' });
+    res.json(tese);
+  } catch (err) {
+    console.error('Erro ao atualizar tese:', err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Excluir uma tese
+router.delete('/:id', async (req, res) => {
+  try {
+    const tese = await Tese.findByIdAndDelete(req.params.id);
+    if (!tese) return res.status(404).json({ message: 'Tese não encontrada' });
+    res.json({ message: 'Tese removida com sucesso' });
+  } catch (err) {
+    console.error('Erro ao excluir tese:', err);
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -174,7 +210,7 @@ router.post('/importar-excel', upload.single('arquivo'), async (req, res) => {
   }
 });
 
-// NOVA ROTA: Endpoint para converter HTML para DOCX
+// Endpoint para converter HTML para DOCX
 router.post('/convert/html-to-docx', async (req, res) => {
   try {
     const { html, filename } = req.body;
@@ -218,8 +254,6 @@ router.post('/convert/html-to-docx', async (req, res) => {
   }
 });
 
-// NOVAS ROTAS SIMPLIFICADAS PARA TEXTOS COMPARTILHADOS
-
 // Salvar texto de uma tese
 router.post('/:id/texto', async (req, res) => {
   try {
@@ -261,7 +295,7 @@ router.get('/:id/texto', async (req, res) => {
   }
 });
 
-// Rota adicional para buscar por identificador
+// Rota para buscar por identificador
 router.get('/identificador/:identificador/texto', async (req, res) => {
   try {
     const { identificador } = req.params;
@@ -274,6 +308,61 @@ router.get('/identificador/:identificador/texto', async (req, res) => {
     res.status(200).json({ texto: tese.texto || '' });
   } catch (err) {
     console.error('Erro ao buscar texto por identificador:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Buscar teses por texto
+router.get('/busca/texto/:texto', async (req, res) => {
+  try {
+    const texto = req.params.texto;
+    const teses = await Tese.find({
+      $or: [
+        { titulo: { $regex: texto, $options: 'i' } },
+        { descricao: { $regex: texto, $options: 'i' } },
+        { area: { $regex: texto, $options: 'i' } },
+        { texto: { $regex: texto, $options: 'i' } }
+      ]
+    });
+    res.json(teses);
+  } catch (err) {
+    console.error('Erro ao buscar teses por texto:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Buscar teses por área
+router.get('/busca/area/:area', async (req, res) => {
+  try {
+    const teses = await Tese.find({ area: req.params.area });
+    res.json(teses);
+  } catch (err) {
+    console.error('Erro ao buscar teses por área:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Buscar teses por assuntos
+router.get('/busca/assuntos/:assunto', async (req, res) => {
+  try {
+    const teses = await Tese.find({ assuntos: req.params.assunto });
+    res.json(teses);
+  } catch (err) {
+    console.error('Erro ao buscar teses por assunto:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Buscar tese por identificador
+router.get('/identificador/:identificador', async (req, res) => {
+  try {
+    const tese = await Tese.findOne({ identificador: req.params.identificador });
+    if (!tese) {
+      return res.status(404).json({ message: 'Tese não encontrada' });
+    }
+    res.json(tese);
+  } catch (err) {
+    console.error('Erro ao buscar tese por identificador:', err);
     res.status(500).json({ message: err.message });
   }
 });
