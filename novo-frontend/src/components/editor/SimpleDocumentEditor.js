@@ -4,6 +4,8 @@ import { Editor } from '@tinymce/tinymce-react';
 import mammoth from 'mammoth';
 import './SimpleDocumentEditor.css';
 import AIResponseModal from '../AIResponseModal/AIResponseModal';
+// Importar as funções de API
+import { carregarTexto, salvarTexto } from '../../api';
 
 function DocumentEditor({ initialContent = '', teses = [], onSave }) {
   const [content, setContent] = useState(initialContent);
@@ -18,15 +20,93 @@ function DocumentEditor({ initialContent = '', teses = [], onSave }) {
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiAction, setAiAction] = useState('');
   
+  // Novos estados para controle de salvamento
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
+  const [lastSaved, setLastSaved] = useState(null);
+  
   // Configurar o título automaticamente se houver teses
   useEffect(() => {
     if (teses.length > 0) {
       // Usar apenas o título da tese como título do documento
       setTitle(`${teses[0].titulo || 'Documento sem título'}`);
-      const initialContent = prepareContent();
-      setContent(initialContent);
+      
+      // Carregar o texto da tese do servidor
+      const loadTeseText = async () => {
+        try {
+          if (teses[0].id) {
+            const textoCarregado = await carregarTexto(teses[0].id);
+            if (textoCarregado && textoCarregado.trim() !== '') {
+              // Se o texto foi carregado com sucesso, use-o
+              setContent(textoCarregado);
+            } else {
+              // Caso contrário, use o conteúdo inicial preparado
+              const initialContent = prepareContent();
+              setContent(initialContent);
+            }
+          } else {
+            // Se não houver ID, use o conteúdo inicial preparado
+            const initialContent = prepareContent();
+            setContent(initialContent);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar texto da tese:', error);
+          // Em caso de erro, use o conteúdo inicial preparado
+          const initialContent = prepareContent();
+          setContent(initialContent);
+        }
+      };
+      
+      loadTeseText();
     }
   }, [teses]);
+
+  // Função para salvar o texto da tese
+  const saveTeseText = async () => {
+    if (teses.length === 0 || !teses[0].id) {
+      // Se não houver tese selecionada ou ID, não há o que salvar
+      return;
+    }
+    
+    try {
+      setIsSaving(true);
+      setSaveStatus('Salvando...');
+      
+      // Obter o conteúdo atual do editor
+      const editorContent = editorRef.current ? editorRef.current.getContent() : content;
+      
+      // Remover metadados antes de salvar
+      const cleanContent = removeMetadata(editorContent);
+      
+      // Salvar o texto da tese
+      await salvarTexto(teses[0].id, cleanContent);
+      
+      // Atualizar estado após salvar
+      setSaveStatus('Salvo com sucesso!');
+      setLastSaved(new Date());
+      
+      // Limpar a mensagem de status após alguns segundos
+      setTimeout(() => {
+        setSaveStatus('');
+      }, 3000);
+    } catch (error) {
+      console.error('Erro ao salvar texto da tese:', error);
+      setSaveStatus('Erro ao salvar. Tente novamente.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Função para auto-salvar a cada 30 segundos
+  useEffect(() => {
+    if (teses.length > 0 && teses[0].id && isEditorReady) {
+      const autoSaveInterval = setInterval(() => {
+        saveTeseText();
+      }, 30000); // 30 segundos
+      
+      return () => clearInterval(autoSaveInterval);
+    }
+  }, [teses, isEditorReady]);
 
   // Função auxiliar para remover metadados de qualquer conteúdo HTML
   const removeMetadata = (html) => {
@@ -780,7 +860,8 @@ ${textContent}`;
       alert("Não foi possível copiar o conteúdo. Por favor, tente exportar o documento.");
     }
     
-    document.body.removeChild(textarea);  };
+    document.body.removeChild(textarea);  
+  };
   
   // Nova função para copiar conteúdo formatado para a área de transferência
   const copyFormattedContentToClipboard = () => {
@@ -826,12 +907,14 @@ ${textContent}`;
     alert("Conteúdo formatado copiado! Agora abra o Word e cole com 'Manter formatação original'");
   };
   
+  // Modificar a função handleSave para usar a nova função de salvamento
   const handleSave = () => {
-    if (onSave) {
-      // Obter o conteúdo atual do editor
+    if (teses.length > 0 && teses[0].id) {
+      // Se tiver uma tese selecionada, salve o texto
+      saveTeseText();
+    } else if (onSave) {
+      // Se tiver uma função onSave, use-a (comportamento original)
       const editorContent = editorRef.current ? editorRef.current.getContent() : content;
-      
-      // Remover metadados antes de salvar
       const cleanContent = removeMetadata(editorContent);
       
       onSave({
@@ -839,8 +922,7 @@ ${textContent}`;
         content: cleanContent
       });
     } else {
-      // Tentar diferentes abordagens para exportação para Word
-      // 1. RTF (melhor para recuo de primeira linha)
+      // Caso contrário, exporte para Word (comportamento original)
       exportToWord();
     }
   };
@@ -923,6 +1005,17 @@ ${textContent}`;
             style={{ display: 'none' }}
           />
           
+          {/* Botão de salvar para teses */}
+          {teses.length > 0 && teses[0].id && (
+            <button 
+              className="save-button"
+              onClick={saveTeseText}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Salvando...' : 'Salvar Tese'}
+            </button>
+          )}
+          
           <div className="ai-actions">
             <button 
               className="ai-button"
@@ -955,6 +1048,11 @@ ${textContent}`;
           >
             Copiar para Word
           </button>
+          
+          {/* Status de salvamento */}
+          {saveStatus && (
+            <span className="save-status">{saveStatus}</span>
+          )}
         </div>
       </div>
       
@@ -962,6 +1060,11 @@ ${textContent}`;
         {teses.length > 0 && (
           <div className="teses-info">
             {teses.length} tese(s) selecionada(s)
+            {lastSaved && (
+              <span className="last-saved-info">
+                Última alteração salva: {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
           </div>
         )}
         
@@ -1103,19 +1206,36 @@ ${textContent}`;
                 e.content = e.content.replace(/<[^>]*class="[^"]*tese-metadata[^"]*"[^>]*>[\s\S]*?<\/[^>]+>/gi, '');
                 e.content = e.content.replace(/<[^>]*class="[^"]*metadata[^"]*"[^>]*>[\s\S]*?<\/[^>]+>/gi, '');
               });
+              
+              // Adicionar evento para salvar automaticamente ao detectar alterações
+              editor.on('Change', function() {
+                // Se houver uma tese selecionada, programar um salvamento após 2 segundos de inatividade
+                if (teses.length > 0 && teses[0].id) {
+                  // Limpar qualquer temporizador existente
+                  if (editor.saveTimer) {
+                    clearTimeout(editor.saveTimer);
+                  }
+                  
+                  // Configurar um novo temporizador
+                  editor.saveTimer = setTimeout(() => {
+                    saveTeseText();
+                  }, 2000);
+                }
+              });
             }
           }}
         />
       </div>
 
       <AIResponseModal
-  isOpen={showAIModal}
-  onClose={() => setShowAIModal(false)}
-  result={aiResult}
-  isProcessing={isAIProcessing}
-  actionType={aiAction}
-  onApply={applyAIResult}
-/>
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        result={aiResult}
+        isProcessing={isAIProcessing}
+        actionType={aiAction}
+        onApply={applyAIResult}
+      />
+      
       {/* Instruções para o usuário */}
       <div className="export-instructions" style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', border: '1px solid #ddd', borderRadius: '4px' }}>
         <h3 style={{ marginTop: '0' }}>Como obter o melhor resultado:</h3>
@@ -1186,6 +1306,24 @@ ${textContent}`;
         
         .save-button:hover {
           background-color: #45a049;
+        }
+        
+        .save-button:disabled {
+          background-color: #cccccc;
+          cursor: not-allowed;
+        }
+        
+        /* Estilo para status de salvamento */
+        .save-status {
+          margin-left: 10px;
+          font-style: italic;
+          color: #666;
+        }
+        
+        .last-saved-info {
+          margin-left: 10px;
+          font-size: 12px;
+          color: #666;
         }
         
         /* Estilo para opções de exportação */
@@ -1458,10 +1596,21 @@ ${textContent}`;
             margin-top: 10px;
           }
         }
+
+        /* Estilo para informações sobre teses */
+        .teses-info {
+          margin-bottom: 10px;
+          padding: 8px 12px;
+          background-color: #f0f8ff;
+          border-radius: 4px;
+          border: 1px solid #b8daff;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
       `}</style>
     </div>
   );
 }
 
 export default DocumentEditor;
-

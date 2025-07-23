@@ -1,4 +1,4 @@
-// backend/models/Tese.js
+// backend/models/Tese.js (adicione o campo texto)
 const mongoose = require('mongoose');
 
 const TeseSchema = new mongoose.Schema({
@@ -21,9 +21,13 @@ const TeseSchema = new mongoose.Schema({
   commentStatus: String,
   documento: String,
   link: String,
-  dataImportacao: {
-    type: Date,
-    default: Date.now
+  // Novo campo para armazenar o texto da tese
+  texto: {
+    type: String,
+    default: ''
+  },
+  ultimaAtualizacaoTexto: {
+    type: Date
   }
 }, { timestamps: true });
 

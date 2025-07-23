@@ -1,4 +1,4 @@
-// backend/routes/teses.js
+// backend/routes/teses.js (versão simplificada)
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -6,7 +6,6 @@ const xlsx = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const Tese = require('../models/Tese');
-// Adicione a importação da biblioteca html-to-docx
 const HTMLtoDOCX = require('html-to-docx');
 
 // Criar pasta uploads se não existir
@@ -216,6 +215,66 @@ router.post('/convert/html-to-docx', async (req, res) => {
       error: 'Erro na conversão para DOCX', 
       details: error.message 
     });
+  }
+});
+
+// NOVAS ROTAS SIMPLIFICADAS PARA TEXTOS COMPARTILHADOS
+
+// Salvar texto de uma tese
+router.post('/:id/texto', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { texto } = req.body;
+    
+    // Verificar se a tese existe
+    const tese = await Tese.findById(id);
+    if (!tese) {
+      return res.status(404).json({ message: 'Tese não encontrada' });
+    }
+    
+    // Atualizar o texto diretamente no documento da tese
+    tese.texto = texto;
+    tese.ultimaAtualizacaoTexto = new Date();
+    await tese.save();
+    
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Erro ao salvar texto:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Obter texto de uma tese
+router.get('/:id/texto', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const tese = await Tese.findById(id);
+    if (!tese) {
+      return res.status(404).json({ message: 'Tese não encontrada' });
+    }
+    
+    res.status(200).json({ texto: tese.texto || '' });
+  } catch (err) {
+    console.error('Erro ao buscar texto:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Rota adicional para buscar por identificador
+router.get('/identificador/:identificador/texto', async (req, res) => {
+  try {
+    const { identificador } = req.params;
+    
+    const tese = await Tese.findOne({ identificador });
+    if (!tese) {
+      return res.status(404).json({ message: 'Tese não encontrada' });
+    }
+    
+    res.status(200).json({ texto: tese.texto || '' });
+  } catch (err) {
+    console.error('Erro ao buscar texto por identificador:', err);
+    res.status(500).json({ message: err.message });
   }
 });
 

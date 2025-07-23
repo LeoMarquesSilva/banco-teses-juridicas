@@ -276,7 +276,7 @@ function TesesList() {
 
   return (
     <div className="teses-container">
-      <h2>Banco de Teses Jurídicas</h2>
+      <h2>Banco de Teses Jurídicass</h2>
       
       {/* Seção de filtros */}
       <div className="filters-section">
