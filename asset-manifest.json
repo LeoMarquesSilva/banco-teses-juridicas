@@ -1,0 +1,19 @@
+{
+  "files": {
+    "main.css": "/banco-teses-juridicas/static/css/main.ff8a3b57.css",
+    "main.js": "/banco-teses-juridicas/static/js/main.6d2bfdbf.js",
+    "static/media/pattern-overlay.png": "/banco-teses-juridicas/static/media/pattern-overlay.87879a6e3538b5e7e0c8.png",
+    "static/media/law-pattern.png": "/banco-teses-juridicas/static/media/law-pattern.57b0b5e0132c61c5182f.png",
+    "static/media/scales-pattern.png": "/banco-teses-juridicas/static/media/scales-pattern.c65e4db84c17a69cb6d3.png",
+    "static/media/logo.png": "/banco-teses-juridicas/static/media/logo.7aa66e92dc5d7c899a6f.png",
+    "static/media/logo-azul.png": "/banco-teses-juridicas/static/media/logo-azul.75e4a62ea3f9dade5ed3.png",
+    "static/media/logo-branco.png": "/banco-teses-juridicas/static/media/logo-branco.e1ac81012a285dbb9bd5.png",
+    "index.html": "/banco-teses-juridicas/index.html",
+    "main.ff8a3b57.css.map": "/banco-teses-juridicas/static/css/main.ff8a3b57.css.map",
+    "main.6d2bfdbf.js.map": "/banco-teses-juridicas/static/js/main.6d2bfdbf.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.ff8a3b57.css",
+    "static/js/main.6d2bfdbf.js"
+  ]
+}
