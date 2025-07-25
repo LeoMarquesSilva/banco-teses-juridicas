@@ -13,7 +13,8 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'https://bibliotecabp.com.br',
-  'http://bibliotecabp.com.br'
+  'http://bibliotecabp.com.br',
+  'https://leomarquessilva.github.io'
 ];
 
 app.use(cors({
