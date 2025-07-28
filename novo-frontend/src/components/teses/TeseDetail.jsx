@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api'; // ✅ Importar configuração
 import './TeseDetail.css';
 
 function TeseDetail() {
@@ -22,14 +23,42 @@ function TeseDetail() {
       }
 
       try {
-        console.log(`Tentando buscar tese com ID: ${id}`);
-        const response = await axios.get(`http://localhost:5000/api/teses/${id}`);
+        console.log(`🔍 Tentando buscar tese com ID: ${id}`);
+        console.log(`🌐 URL da API: ${API_BASE_URL}`);
+        
+        // ✅ Usar URL dinâmica
+        const url = `${API_BASE_URL}/api/teses/${id}`;
+        console.log(`📡 Fazendo requisição para: ${url}`);
+        
+        const response = await axios.get(url, {
+          timeout: 30000, // 30 segundos
+          withCredentials: true
+        });
+        
+        console.log('✅ Tese carregada com sucesso:', response.data);
         setTese(response.data);
         setLoading(false);
       } catch (err) {
-        console.log('Erro completo:', err);
-        console.log('Dados da resposta de erro:', err.response?.data);
-        setError(`Erro ao carregar detalhes da tese: ${err.response?.status} - ${err.response?.data?.message || err.message}`);
+        console.error('❌ Erro completo:', err);
+        console.error('📊 Status da resposta:', err.response?.status);
+        console.error('📋 Dados da resposta:', err.response?.data);
+        console.error('🔗 URL tentada:', `${API_BASE_URL}/api/teses/${id}`);
+        
+        let errorMessage = 'Erro desconhecido';
+        
+        if (err.code === 'ERR_NETWORK') {
+          errorMessage = 'Erro de conexão com o servidor. Verifique sua internet.';
+        } else if (err.response?.status === 404) {
+          errorMessage = 'Tese não encontrada.';
+        } else if (err.response?.status === 500) {
+          errorMessage = 'Erro interno do servidor.';
+        } else if (err.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        } else {
+          errorMessage = err.message;
+        }
+        
+        setError(`Erro ao carregar detalhes da tese: ${errorMessage}`);
         setLoading(false);
       }
     };
@@ -84,6 +113,7 @@ function TeseDetail() {
     <div className="loading-container">
       <div className="loading-spinner"></div>
       <p>Carregando detalhes da tese...</p>
+      <small>Conectando com: {API_BASE_URL}</small>
     </div>
   );
   
@@ -92,6 +122,12 @@ function TeseDetail() {
       <div className="error-icon">!</div>
       <h3>Erro ao carregar a tese</h3>
       <p>{error}</p>
+      <details style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+        <summary>Detalhes técnicos</summary>
+        <p>URL da API: {API_BASE_URL}</p>
+        <p>ID da tese: {id}</p>
+        <p>Ambiente: {process.env.NODE_ENV || 'development'}</p>
+      </details>
       <Link to="/teses" className="back-button">← Voltar para a lista</Link>
     </div>
   );
