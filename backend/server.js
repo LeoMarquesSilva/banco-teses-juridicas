@@ -35,16 +35,6 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-if (process.env.NODE_ENV === 'production') {
-  // Servir os arquivos estáticos da build
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
-  
-  // Para qualquer rota não-API, retornar o index.html
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-  });
-}
-
 // Criar pasta uploads se não existir
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -96,6 +86,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/', (req, res) => {
   res.send('API de Teses Jurídicas está funcionando!');
 });
+
+if (process.env.NODE_ENV === 'production') {
+  // Servir os arquivos estáticos da build
+  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  
+  // Para qualquer rota não-API, retornar o index.html
+  app.get('/*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+  });
+}
 
 // Porta do servidor
 const PORT = process.env.PORT || 5000;
