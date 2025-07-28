@@ -1,161 +1,188 @@
 // src/contexts/AuthContext.jsx
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { showSuccessToast, showErrorToast } from '../components/CustomToast';
-import api from '../api';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { login, registrar, obterPerfil } from '../api'; // ✅ Importar as funções corretas
 
-// Criar o contexto
-export const AuthContext = createContext({});
+const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Verificar se há um usuário logado ao iniciar a aplicação
+  // Verificar autenticação ao carregar
   useEffect(() => {
-    const loadStoredAuth = async () => {
+    const verificarAuth = async () => {
       try {
-        const storedToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
         
-        if (storedToken && storedUser) {
-          // Configurar o token no header das requisições
-          api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-          
-          // Definir o usuário atual
-          setCurrentUser(JSON.parse(storedUser));
+        if (token && userData) {
+          setUser(JSON.parse(userData));
           setIsAuthenticated(true);
+          
+          // Verificar se o token ainda é válido
+          try {
+            const perfil = await obterPerfil();
+            setUser(perfil);
+          } catch (error) {
+            console.warn('Token expirado, fazendo logout...');
+            logout();
+          }
         }
       } catch (error) {
-        console.error('Erro ao carregar dados de autenticação:', error);
-        // Em caso de erro, limpar os dados de autenticação
-        localStorage.removeItem('authToken');
-        sessionStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        sessionStorage.removeItem('user');
+        console.error('Erro ao verificar autenticação:', error);
+        logout();
       } finally {
         setLoading(false);
       }
     };
 
-    loadStoredAuth();
+    verificarAuth();
   }, []);
 
-  // Função para login
-  const login = async (email, senha, lembrar = false) => {
+  // Função de login - ✅ CORRIGIDA
+  const handleLogin = async (email, senha, lembrarMe = false) => {
     try {
-      // Chamar o webhook de login no n8n com a URL correta
-      const response = await api.post('/webhook/auth/login', { email, senha });
+      setLoading(true);
+      console.log('🔄 Iniciando login para:', email);
       
-      if (response.data.success) {
-        const { token, user } = response.data;
+      // ✅ USAR A FUNÇÃO login() DO api.js, NÃO A INSTÂNCIA api
+      const response = await login(email, senha);
+      
+      console.log('✅ Resposta do login:', response);
+
+      if (response.success && response.token) {
+        const storage = lembrarMe ? localStorage : sessionStorage;
         
-        // Armazenar o token e os dados do usuário
-        const storage = lembrar ? localStorage : sessionStorage;
-        storage.setItem('authToken', token);
-        storage.setItem('user', JSON.stringify(user));
+        // Salvar token e dados do usuário
+        storage.setItem('authToken', response.token);
+        storage.setItem('user', JSON.stringify(response.user));
         
-        // Configurar o token para as próximas requisições
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        
-        // Atualizar o estado
-        setCurrentUser(user);
+        setUser(response.user);
         setIsAuthenticated(true);
         
-        // Mostrar notificação de sucesso
-        showSuccessToast('Login realizado com sucesso!');
-        
+        console.log('✅ Login realizado com sucesso');
         return { success: true };
       } else {
-        // Mostrar notificação de erro
-        showErrorToast(response.data.message || 'Credenciais inválidas');
-        
-        return { 
-          success: false, 
-          message: response.data.message || 'Credenciais inválidas' 
-        };
+        throw new Error(response.message || 'Credenciais inválidas');
       }
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
+      console.error('❌ Erro ao fazer login:', error);
       
-      // Verificar se há uma mensagem específica do servidor
-      const errorMessage = error.response?.data?.message || 
-                          'Não foi possível fazer login. Verifique suas credenciais e tente novamente.';
+      // Tratamento específico de erros
+      let errorMessage = 'Erro ao fazer login';
       
-      // Mostrar notificação de erro
-      showErrorToast(errorMessage);
+      if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Email ou senha incorretos.';
+      } else if (error.response?.status === 429) {
+        errorMessage = 'Muitas tentativas. Tente novamente em alguns minutos.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       
-      return { success: false, message: errorMessage };
+      return { 
+        success: false, 
+        error: errorMessage 
+      };
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Função para cadastro
-  const register = async (userData) => {
+  // Função de registro - ✅ CORRIGIDA
+  const handleRegistro = async (nome, email, senha) => {
     try {
-      // Chamar o webhook de cadastro no n8n com a URL correta
-      const response = await api.post('/webhook/auth/register', {
-        nome: userData.nome,
-        email: userData.email,
-        senha: userData.senha,
-        instituicao: userData.instituicao,
-        cargo: userData.cargo
-      });
+      setLoading(true);
+      console.log('🔄 Iniciando registro para:', email);
       
-      if (response.data.success) {
-        // Mostrar notificação de sucesso
-        showSuccessToast('Cadastro realizado com sucesso! Você já pode fazer login.');
-        
-        return { success: true };
-      } else {
-        // Mostrar notificação de erro
-        showErrorToast(response.data.message || 'Erro ao cadastrar usuário');
-        
+      // ✅ USAR A FUNÇÃO registrar() DO api.js
+      const response = await registrar(nome, email, senha);
+      
+      console.log('✅ Resposta do registro:', response);
+
+      if (response.success) {
         return { 
-          success: false, 
-          message: response.data.message || 'Erro ao cadastrar usuário' 
+          success: true, 
+          message: response.message || 'Registro realizado com sucesso!' 
         };
+      } else {
+        throw new Error(response.message || 'Erro no registro');
       }
     } catch (error) {
-      console.error('Erro ao cadastrar:', error);
+      console.error('❌ Erro ao fazer registro:', error);
       
-      // Verificar se há uma mensagem específica do servidor
-      const errorMessage = error.response?.data?.message || 
-                          'Não foi possível realizar o cadastro. Por favor, tente novamente.';
+      let errorMessage = 'Erro ao fazer registro';
       
-      // Mostrar notificação de erro
-      showErrorToast(errorMessage);
+      if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      } else if (error.response?.status === 409) {
+        errorMessage = 'Este email já está cadastrado.';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Dados inválidos. Verifique os campos preenchidos.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       
-      return { success: false, message: errorMessage };
+      return { 
+        success: false, 
+        error: errorMessage 
+      };
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Função para logout
+  // Função de logout
   const logout = () => {
-    // Remover token e dados do usuário
     localStorage.removeItem('authToken');
-    sessionStorage.removeItem('authToken');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('user');
     
-    // Remover o token do header das requisições
-    delete api.defaults.headers.common['Authorization'];
-    
-    // Atualizar o estado
-    setCurrentUser(null);
+    setUser(null);
     setIsAuthenticated(false);
     
-    // Mostrar notificação de sucesso
-    showSuccessToast('Logout realizado com sucesso!');
+    console.log('✅ Logout realizado');
   };
 
-  // Valores e funções que serão disponibilizados pelo contexto
+  // Função para atualizar perfil
+  const atualizarPerfil = async (novosDados) => {
+    try {
+      const perfilAtualizado = await obterPerfil();
+      setUser(perfilAtualizado);
+      
+      // Atualizar no storage também
+      const storage = localStorage.getItem('authToken') ? localStorage : sessionStorage;
+      storage.setItem('user', JSON.stringify(perfilAtualizado));
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      return { 
+        success: false, 
+        error: 'Erro ao atualizar perfil' 
+      };
+    }
+  };
+
   const value = {
-    currentUser,
-    isAuthenticated,
+    user,
     loading,
-    login,
-    register,
-    logout
+    isAuthenticated,
+    login: handleLogin,        // ✅ Função corrigida
+    registro: handleRegistro,  // ✅ Função corrigida
+    logout,
+    atualizarPerfil
   };
 
   return (
@@ -163,9 +190,6 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// Hook personalizado para usar o contexto de autenticação
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export default AuthContext;

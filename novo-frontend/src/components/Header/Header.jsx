@@ -56,14 +56,22 @@ function Header() {
     navigate('/login');
   };
 
-  // Função para obter as iniciais do nome do usuário
+  // ✅ FUNÇÃO CORRIGIDA - obter as iniciais do nome do usuário
   const getUserInitials = () => {
-    if (!currentUser || !currentUser.nome) return '?';
+    if (!currentUser) return '?';
     
-    const nameParts = currentUser.nome.split(' ');
+    const userName = currentUser.nome || currentUser.name || '';
+    if (!userName) return '?';
+    
+    const nameParts = userName.split(' ');
     if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase();
     
     return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+  };
+
+  // ✅ FUNÇÃO AUXILIAR - obter nome do usuário
+  const getUserName = () => {
+    return currentUser?.nome || currentUser?.name || 'Usuário';
   };
 
   return (
@@ -124,7 +132,8 @@ function Header() {
                 <div className="user-avatar">
                   {getUserInitials()}
                 </div>
-                <span className="user-name">{currentUser.nome.split(' ')[0]}</span>
+                {/* ✅ LINHA 127 CORRIGIDA */}
+                <span className="user-name">{getUserName().split(' ')[0]}</span>
                 <i className="fas fa-chevron-down"></i>
               </button>
 
@@ -135,8 +144,9 @@ function Header() {
                       {getUserInitials()}
                     </div>
                     <div className="user-details">
-                      <h4 className="user-fullname">{currentUser.nome}</h4>
-                      <p className="user-email">{currentUser.email}</p>
+                      {/* ✅ LINHA 136 CORRIGIDA */}
+                      <h4 className="user-fullname">{getUserName()}</h4>
+                      <p className="user-email">{currentUser?.email || ''}</p>
                     </div>
                   </div>
                   <ul className="user-menu">

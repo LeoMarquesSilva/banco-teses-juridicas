@@ -1,7 +1,7 @@
 // src/components/teses/TesesList.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { listarTeses } from '../../api'; // ✅ USANDO A API CORRIGIDA
 import mammoth from 'mammoth';
 import './TesesList.css';
 
@@ -31,35 +31,59 @@ function TesesList() {
   useEffect(() => {
     const fetchTeses = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/teses');
+        console.log('🔄 Carregando teses...');
+        setLoading(true);
+        setError(null);
         
-        // Adicionar log para verificar a estrutura dos dados
-        console.log('Dados recebidos do servidor:', response.data);
+        // ✅ USANDO A FUNÇÃO DA API CORRIGIDA
+        const data = await listarTeses();
         
-        setTeses(response.data);
-        setFilteredTeses(response.data);
+        console.log('✅ Dados recebidos:', data);
         
-        // Extrair áreas únicas para os filtros
-        const uniqueAreas = [...new Set(response.data
-          .filter(tese => tese.area) // Filtrar valores nulos/undefined
-          .map(tese => tese.area))];
-        
-        setAreas(uniqueAreas);
+        // ✅ VERIFICAÇÃO DE DADOS
+        if (!Array.isArray(data)) {
+          console.warn('⚠️ Dados não são um array:', data);
+          setTeses([]);
+          setFilteredTeses([]);
+        } else {
+          setTeses(data);
+          setFilteredTeses(data);
+          
+          // Extrair áreas únicas para os filtros
+          const uniqueAreas = [...new Set(data
+            .filter(tese => tese.area) // Filtrar valores nulos/undefined
+            .map(tese => tese.area))];
+          
+          setAreas(uniqueAreas);
+          console.log(`✅ ${data.length} teses carregadas, ${uniqueAreas.length} áreas únicas`);
+        }
         
         // Carregar textos de teses (se existirem)
         try {
           const savedTeseTexts = localStorage.getItem('teseTexts');
           if (savedTeseTexts) {
             setTeseTexts(JSON.parse(savedTeseTexts));
+            console.log('✅ Textos de teses carregados do localStorage');
           }
         } catch (err) {
-          console.error('Erro ao carregar textos de teses:', err);
+          console.error('❌ Erro ao carregar textos de teses:', err);
         }
         
-        setLoading(false);
       } catch (err) {
-        console.error('Erro completo:', err);
-        setError('Erro ao carregar teses: ' + err.message);
+        console.error('❌ Erro ao carregar teses:', err);
+        setError(`Erro ao carregar teses: ${err.message}`);
+        
+        // ✅ EM CASO DE ERRO, AINDA ASSIM TENTAR CARREGAR DADOS LOCAIS
+        try {
+          const savedTeseTexts = localStorage.getItem('teseTexts');
+          if (savedTeseTexts) {
+            setTeseTexts(JSON.parse(savedTeseTexts));
+          }
+        } catch (localErr) {
+          console.error('❌ Erro ao carregar dados locais:', localErr);
+        }
+        
+      } finally {
         setLoading(false);
       }
     };
@@ -179,7 +203,7 @@ function TesesList() {
       texto: teseTexts[tese._id] || "Texto não fornecido"
     }));
     
-    console.log("Teses selecionadas para o documento:", tesesWithText);
+    console.log("✅ Teses selecionadas para o documento:", tesesWithText);
     
     // Salvar no localStorage como backup
     localStorage.setItem('selectedTesesForEditor', JSON.stringify(tesesWithText));
@@ -207,6 +231,8 @@ function TesesList() {
       localStorage.setItem('teseTexts', JSON.stringify(updatedTexts));
       setImportModalOpen(false);
       setCurrentImportTese(null);
+      
+      console.log(`✅ Texto importado para tese: ${currentImportTese.titulo}`);
     }
   };
 
@@ -216,6 +242,7 @@ function TesesList() {
     if (!file || !currentImportTese) return;
     
     try {
+      console.log('🔄 Importando documento Word...');
       const arrayBuffer = await file.arrayBuffer();
       
       const options = {
@@ -244,8 +271,11 @@ function TesesList() {
         textarea.style.height = 'auto';
         textarea.style.height = (textarea.scrollHeight) + 'px';
       }
+      
+      console.log('✅ Documento Word importado com sucesso');
+      
     } catch (error) {
-      console.error("Erro ao importar documento Word:", error);
+      console.error("❌ Erro ao importar documento Word:", error);
       alert("Erro ao importar o documento. Por favor, tente novamente.");
     }
     
@@ -271,12 +301,77 @@ function TesesList() {
     }
   };
 
-  if (loading) return <div className="loading-spinner">Carregando...</div>;
-  if (error) return <div className="error-message">{error}</div>;
+  // ✅ FUNÇÃO PARA TENTAR RECARREGAR TESES
+  const handleRetry = async () => {
+    setError(null);
+    setLoading(true);
+    
+    try {
+      console.log('🔄 Tentando recarregar teses...');
+      const data = await listarTeses();
+      
+      if (Array.isArray(data)) {
+        setTeses(data);
+        setFilteredTeses(data);
+        
+        const uniqueAreas = [...new Set(data
+          .filter(tese => tese.area)
+          .map(tese => tese.area))];
+        setAreas(uniqueAreas);
+        
+        console.log(`✅ Recarga bem-sucedida: ${data.length} teses`);
+      }
+      
+    } catch (err) {
+      console.error('❌ Falha na recarga:', err);
+      setError(`Erro ao recarregar: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ RENDERIZAÇÃO COM TRATAMENTO DE ESTADOS
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Carregando teses...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <div className="error-message">
+          <h3>❌ Erro ao Carregar Teses</h3>
+          <p>{error}</p>
+          <div className="error-actions">
+            <button onClick={handleRetry} className="retry-button">
+              🔄 Tentar Novamente
+            </button>
+            <button onClick={() => setError(null)} className="dismiss-button">
+              ✖ Dispensar Erro
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="teses-container">
-      <h2>Banco de Teses Jurídicass</h2>
+      <h2>Banco de Teses Jurídicas</h2>
+      
+      {/* ✅ INDICADOR DE STATUS */}
+      <div className="status-bar">
+        <span className="status-indicator">
+          {teses.length > 0 ? '🟢 Conectado' : '🟡 Dados Limitados'}
+        </span>
+        <span className="teses-count">
+          {teses.length} teses disponíveis
+        </span>
+      </div>
       
       {/* Seção de filtros */}
       <div className="filters-section">
@@ -326,8 +421,17 @@ function TesesList() {
       {/* Tabela de teses */}
       {filteredTeses.length === 0 ? (
         <div className="no-results">
-          <p>Nenhuma tese encontrada com os filtros atuais.</p>
-          <button onClick={clearFilters}>Limpar filtros</button>
+          <p>
+            {teses.length === 0 
+              ? "Nenhuma tese disponível no momento." 
+              : "Nenhuma tese encontrada com os filtros atuais."
+            }
+          </p>
+          {areaFilters.length > 0 || searchTerm ? (
+            <button onClick={clearFilters}>Limpar filtros</button>
+          ) : (
+            <button onClick={handleRetry}>🔄 Recarregar</button>
+          )}
         </div>
       ) : (
         <div className="table-container">
