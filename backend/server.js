@@ -189,12 +189,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ✅ PRODUÇÃO: Servir arquivos estáticos
 if (process.env.NODE_ENV === 'production') {
-  // Servir os arquivos estáticos da build
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  // 🔧 ALTERAÇÃO: Servir arquivos da pasta pai
+  app.use(express.static(path.join(__dirname, '../')));
   
-  // Para qualquer rota não-API, retornar o index.html
+  // 🔧 ALTERAÇÃO: Buscar index.html na pasta pai
   app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+    res.sendFile(path.join(__dirname, '../index.html'));
   });
 }
 
