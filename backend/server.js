@@ -155,7 +155,8 @@ app.get('/', (req, res) => {
     message: 'API de Teses Jurídicas está funcionando!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    cors: 'enabled'
+    cors: 'enabled',
+    mode: 'API Only - Frontend separado'
   });
 });
 
@@ -165,7 +166,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     cors: 'enabled',
     environment: process.env.NODE_ENV || 'development',
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    mode: 'API Only'
   });
 });
 
@@ -187,16 +189,9 @@ app.use('/api/teses', tesesRoutes);
 // ✅ Servir arquivos estáticos da pasta uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ✅ PRODUÇÃO: Servir arquivos estáticos
-if (process.env.NODE_ENV === 'production') {
-  // 🔧 ALTERAÇÃO: Servir arquivos da pasta pai
-  app.use(express.static(path.join(__dirname, '../')));
-  
-  // 🔧 ALTERAÇÃO: Buscar index.html na pasta pai
-  app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../index.html'));
-  });
-}
+// ✅ REMOVIDO: Configuração de produção para servir frontend
+// O backend agora funciona APENAS como API
+// Frontend está separado no FTP
 
 // ✅ MIDDLEWARE DE TRATAMENTO DE ERROS
 app.use((error, req, res, next) => {
@@ -225,7 +220,8 @@ app.use('*', (req, res) => {
     error: 'Rota não encontrada',
     path: req.originalUrl,
     method: req.method,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    message: 'Esta é uma API. Frontend está em domínio separado.'
   });
 });
 
@@ -239,6 +235,7 @@ app.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🧪 CORS test: http://localhost:${PORT}/api/cors-test`);
   console.log(`📋 Origens CORS permitidas:`, allowedOrigins.length);
+  console.log(`🎯 Modo: API APENAS - Frontend separado`);
   allowedOrigins.forEach(origin => console.log(`   ✅ ${origin}`));
 });
 
